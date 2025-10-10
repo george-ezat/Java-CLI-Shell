@@ -1,6 +1,9 @@
 import java.util.Scanner;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
 import java.io.File;
-
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 // ==============================================
 
 class Parser {
@@ -15,7 +18,7 @@ class Parser {
 
         if (input_parts.length > 0) {
             commandName = input_parts[0];
-            args = new String [input_parts.length - 1];
+            args = new String[input_parts.length - 1];
             System.arraycopy(input_parts, 1, args, 0, input_parts.length - 1);
             return true;
         }
@@ -79,11 +82,78 @@ public class Terminal {
 
     // ------------------------------------------
 
+    public void unzip(String[] args) {
+        if (args.length != 1 && args.length != 3) {
+            System.out.println("Error: Invalid arguments for unzip.");
+            return;
+        }
+
+        File zipFile = new File(args[0]);
+        File destDir;
+
+        if (!zipFile.getName().endsWith(".zip")) {
+            System.out.println("Error: It is not a zip file!");
+            return;
+        }
+
+        if (!zipFile.exists()) {
+            System.out.println("Error: Zip file does not exist!");
+            return;
+        }
+
+        // Determine the destination directory
+        if (args.length == 3) {
+            if (!args[1].equals("-d")) {
+                System.out.println("Error: Invalid flag. Use '-d' for destination.");
+                return;
+            }
+            destDir = new File(args[2]);
+        } else {
+            destDir = new File(System.getProperty("user.dir"));
+        }
+
+        // Create the destination directory if it doesn't exist
+        if (!destDir.exists()) {
+            destDir.mkdirs();
+        }
+
+        try (ZipInputStream zis = new ZipInputStream(new FileInputStream(zipFile))) {
+            ZipEntry zipEntry = zis.getNextEntry();
+            byte[] buffer = new byte[1024];
+
+            while (zipEntry != null) {
+                File newFile = new File(destDir, zipEntry.getName());
+                if (zipEntry.isDirectory()) {
+                    newFile.mkdirs();
+                } else {
+                    // Create parent directories if needed
+                    new File(newFile.getParent()).mkdirs();
+                    try (FileOutputStream fos = new FileOutputStream(newFile)) {
+                        int len;
+                        while ((len = zis.read(buffer)) > 0) {
+                            fos.write(buffer, 0, len);
+                        }
+                    }
+                }
+                zis.closeEntry();
+                zipEntry = zis.getNextEntry();
+            }
+            System.out.println("Unzip completed.");
+        } catch (Exception e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+
+    // ------------------------------------------
+
     // This method will choose the suitable command method to be called
     public void chooseCommandAction() {
         switch (parser.commandName) {
             case "rmdir":
                 rmdir(parser.args);
+                break;
+            case "unzip":
+                unzip(parser.args);
                 break;
             default:
                 System.out.println("Error: Command not found!");
