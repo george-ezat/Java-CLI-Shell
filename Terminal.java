@@ -1,3 +1,4 @@
+import java.util.Arrays;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -47,9 +48,57 @@ public class Terminal {
 
     // ------------------------------------------
 
+    public void pwd() {
+        if (parser.args.length != 0) {
+            System.out.println("Error: command takes no argument.");
+            return;
+        }
+        System.out.println(System.getProperty("user.dir"));
+    }
+
+    // ------------------------------------------
+
+    public void ls() {
+        if (parser.args.length != 0) {
+            System.out.println("Error: command takes no argument");
+            return;
+        }
+
+        File current_directory = new File(System.getProperty("user.dir"));
+        File[] filesAndDirectories = current_directory.listFiles();
+        String[] names = new String[filesAndDirectories.length];
+
+        for (short i = 0; i < filesAndDirectories.length; i++) {
+            names[i] = filesAndDirectories[i].getName();
+        }
+
+        Arrays.sort(names);
+        System.out.println(String.join("\t", names));
+    }
+
+    // ------------------------------------------
+
+    public void rm(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Error: command requires exactly one argument (file name or path).");
+            return;
+        }
+
+        File fileToRemove = new File(System.getProperty("user.dir"), args[0]);
+        if (fileToRemove.isDirectory()) {
+            System.out.println("Error: It is a directory not a file!");
+        } else if (fileToRemove.exists()) {
+            fileToRemove.delete();
+        } else {
+            System.out.println("Error: This file does not exist!");
+        }
+    }
+
+    // ------------------------------------------
+
     public void rmdir(String[] args) {
         if (args.length != 1) {
-            System.out.println("Error: Invalid Args length!");
+            System.out.println("Error: command requires exactly one argument (directory name).");
             return;
         }
 
@@ -73,10 +122,10 @@ public class Terminal {
                         System.out.println("Error: Directory is not empty!");
                     }
                 } else {
-                    System.out.println("Error: '" + argument + "'' is a file, not a directory!");
+                    System.out.println("Error: '" + argument + "' is a file, not a directory!");
                 }
             } else
-                System.out.println("Error: Directory does not exists");
+                System.out.println("Error: Directory does not exist!");
         }
     }
 
@@ -84,7 +133,8 @@ public class Terminal {
 
     public void unzip(String[] args) {
         if (args.length != 1 && args.length != 3) {
-            System.out.println("Error: Invalid arguments for unzip.");
+            System.out.println("Error: Invalid arguments!");
+            System.out.println("Usage: unzip <file.zip> [-d <destination_directory>]");
             return;
         }
 
@@ -149,6 +199,15 @@ public class Terminal {
     // This method will choose the suitable command method to be called
     public void chooseCommandAction() {
         switch (parser.commandName) {
+            case "pwd":
+                pwd();
+                break;
+            case "ls":
+                ls();
+                break;
+            case "rm":
+                rm(parser.args);
+                break;
             case "rmdir":
                 rmdir(parser.args);
                 break;
