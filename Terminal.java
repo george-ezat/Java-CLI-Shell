@@ -5,7 +5,11 @@ import java.util.zip.ZipInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.IOException;
+
+import static java.nio.file.StandardCopyOption.*;
 // ==============================================
+import java.nio.file.Files;
 
 class Parser {
     String commandName;
@@ -195,6 +199,44 @@ public class Terminal {
     }
 
     // ------------------------------------------
+    
+    public void cp (String[] args){
+        if (args.length != 2) {
+            System.out.println("Error: command requires exactly two arguments.");
+            return;
+        }
+    
+        File source = new File(System.getProperty("user.dir"), args[0]);
+        File des = new File(System.getProperty("user.dir"), args[1]);
+
+        
+        if (source.isDirectory()) {
+            if (des.isDirectory()){
+                System.out.println("Error: This command for copy a file not directory.");
+            }else{
+                System.out.println("Error: Can't copy directory to file.");
+            }
+        } else if (source.exists()) {
+            try{
+            Files.copy(source.toPath(), des.toPath(), REPLACE_EXISTING);
+            System.out.println("File copied successfully to "+ des.getPath());
+            }
+            catch (IOException e) {
+                System.out.println("Error: " + e.getMessage());
+                
+            }
+        } else {
+            System.out.println("Error: This file does not exist!");
+        }
+    }
+
+    // ------------------------------------------
+
+    public void cpr (String[] args){
+        System.out.println("Under development");
+    }
+
+    // ------------------------------------------
 
     // This method will choose the suitable command method to be called
     public void chooseCommandAction() {
@@ -214,6 +256,14 @@ public class Terminal {
             case "unzip":
                 unzip(parser.args);
                 break;
+            case "cp":
+				if (parser.args.length > 0 && parser.args[0].equals("-r")) {
+					cpr(parser.args);
+					break;
+				} else {
+					cp(parser.args);
+					break;
+				}
             default:
                 System.out.println("Error: Command not found!");
         }
