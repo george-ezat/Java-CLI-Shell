@@ -10,7 +10,6 @@ import java.nio.file.Files;
 import static java.nio.file.StandardCopyOption.*;
 // ==============================================
 
-
 class Parser {
     String commandName;
     String[] args;
@@ -199,94 +198,81 @@ public class Terminal {
     }
 
     // ------------------------------------------
-    
-    public void cp (String[] args){
+
+    public void cp(String[] args) {
         if (args.length > 0 && args[0].equals("-r")) {
-                cpr(args);
+            cpr(args);
         } else {
-                
-            
             if (args.length != 2) {
                 System.out.println("Error: command requires exactly two arguments.");
                 return;
             }
-        
+
             File source = new File(System.getProperty("user.dir"), args[0]);
             File des = new File(System.getProperty("user.dir"), args[1]);
 
-            
-            if (source.isDirectory()) {
-                if (des.isDirectory()){
-                    System.out.println("Error: This command for copy a file not directory.");
-                }else{
-                    System.out.println("Error: Can't copy directory to file.");
-                }
+            if (source.isDirectory() || des.isDirectory()) {
+                System.out.println("Error: arguments must be files.");
+                return;
             } else if (source.exists()) {
-                try{
-                Files.copy(source.toPath(), des.toPath(), REPLACE_EXISTING);
-                System.out.println("File copied successfully to "+ des.getPath());
-                }
-                catch (IOException e) {
+                try {
+                    Files.copy(source.toPath(), des.toPath(), REPLACE_EXISTING);
+                    System.out.println("File copied successfully to " + des.getPath());
+                } catch (IOException e) {
                     System.out.println("Error: " + e.getMessage());
-                    
+                    return;
                 }
             } else {
-                System.out.println("Error: This file does not exist!");
+                System.out.println("Error: source file does not exist!");
+                return;
             }
-       }   
-}
+        }
+    }
 
     // ------------------------------------------
 
-    public void cpr (String[] args){
+    public void cpr(String[] args) {
         if (args.length != 3) {
             System.out.println("Error: command requires exactly two arguments.");
             return;
         }
-    
+
         File source = new File(System.getProperty("user.dir"), args[1]);
         File des = new File(System.getProperty("user.dir"), args[2]);
 
-        
-        if (!source.isDirectory()) {
-            if (!des.isDirectory()){
-                System.out.println("Error: This command for copy a directories not files.");
-                return;
-            }else{
-                System.out.println("Error: Can't copy File to directories.");
-                return;
-            }
+        if (!source.isDirectory() || !des.isDirectory()) {
+            System.out.println("Error: arguments must be directories.");
         } else if (source.exists()) {
-            try{
+            try {
                 cp_directory(source, des);
-                System.out.println("Directory copied successfully to "+ des.getPath());
-                }
-                catch (IOException e) {
-                    System.out.println("Error: " + e.getMessage());
-                    
-                }
+                System.out.println("Directory copied successfully to " + des.getPath());
+            } catch (IOException e) {
+                System.out.println("Error: " + e.getMessage());
+            }
         } else {
-            System.out.println("Error: This directories does not exist!");
+            System.out.println("Error: source directoriy does not exist!");
             return;
         }
     }
 
     // ------------------------------------------
 
-    public void cp_directory (File source, File des) throws IOException {
-        if(!des.exists()){
+    public void cp_directory(File source, File des) throws IOException {
+        if (!des.exists()) {
             des.mkdirs();
         }
+
         File[] files = source.listFiles();
+
         if (files == null) {
             return;
         }
-        for (File f: files){
-            File pasted = new File(des, f.getName() );
-            if (f.isDirectory()){
+
+        for (File f : files) {
+            File pasted = new File(des, f.getName());
+            if (f.isDirectory()) {
                 cp_directory(f, pasted);
-            }
-            else{
+            } else {
                 Files.copy(f.toPath(), pasted.toPath(), REPLACE_EXISTING);
             }
         }
