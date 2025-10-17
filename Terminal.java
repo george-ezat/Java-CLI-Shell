@@ -7,6 +7,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.io.FileReader;
+import java.io.BufferedReader;
 import static java.nio.file.StandardCopyOption.*;
 // ==============================================
 
@@ -48,6 +50,8 @@ class Parser {
 
 public class Terminal {
     Parser parser;
+    public static final String HOME_DIRECTORY = System.getProperty("user.dir");
+    public static String CurrentDirectory = System.getProperty("user.dir");
 
     // ------------------------------------------
 
@@ -56,7 +60,7 @@ public class Terminal {
             System.out.println("Error: command takes no argument.");
             return;
         }
-        System.out.println(System.getProperty("user.dir"));
+        System.out.println(CurrentDirectory);
     }
 
     // ------------------------------------------
@@ -67,7 +71,7 @@ public class Terminal {
             return;
         }
 
-        File current_directory = new File(System.getProperty("user.dir"));
+        File current_directory = new File(CurrentDirectory);
         File[] filesAndDirectories = current_directory.listFiles();
         String[] names = new String[filesAndDirectories.length];
 
@@ -87,7 +91,7 @@ public class Terminal {
             return;
         }
 
-        File fileToRemove = new File(System.getProperty("user.dir"), args[0]);
+        File fileToRemove = new File(CurrentDirectory, args[0]);
         if (fileToRemove.isDirectory()) {
             System.out.println("Error: It is a directory not a file!");
         } else if (fileToRemove.exists()) {
@@ -105,18 +109,17 @@ public class Terminal {
             return;
         }
 
-        String argument = args[0];
-        File current_directory = new File(System.getProperty("user.dir"));
+        File current_directory = new File(CurrentDirectory);
         File[] filesAndDirectories = current_directory.listFiles();
 
-        if ("*".equals(argument)) {
+        if ("*".equals(args[0])) {
             for (File item : filesAndDirectories) {
                 if (item.isDirectory() && item.listFiles().length == 0) {
                     item.delete();
                 }
             }
         } else {
-            File directory = new File(argument);
+            File directory = new File(CurrentDirectory, args[0]);
             if (directory.exists()) {
                 if (directory.isDirectory()) {
                     if (directory.listFiles().length == 0) {
@@ -125,7 +128,7 @@ public class Terminal {
                         System.out.println("Error: Directory is not empty!");
                     }
                 } else {
-                    System.out.println("Error: '" + argument + "' is a file, not a directory!");
+                    System.out.println("Error: '" + args[0] + "' is a file, not a directory!");
                 }
             } else
                 System.out.println("Error: Directory does not exist!");
@@ -141,7 +144,7 @@ public class Terminal {
             return;
         }
 
-        File zipFile = new File(args[0]);
+        File zipFile = new File(CurrentDirectory, args[0]);
         File destDir;
 
         if (!zipFile.getName().endsWith(".zip")) {
@@ -160,9 +163,9 @@ public class Terminal {
                 System.out.println("Error: Invalid flag. Use '-d' for destination.");
                 return;
             }
-            destDir = new File(args[2]);
+            destDir = new File(CurrentDirectory, args[2]);
         } else {
-            destDir = new File(System.getProperty("user.dir"));
+            destDir = new File(CurrentDirectory);
         }
 
         // Create the destination directory if it doesn't exist
@@ -191,7 +194,6 @@ public class Terminal {
                 zis.closeEntry();
                 zipEntry = zis.getNextEntry();
             }
-            System.out.println("Unzip completed.");
         } catch (Exception e) {
             System.out.println("Error: " + e.getMessage());
         }
@@ -208,8 +210,8 @@ public class Terminal {
                 return;
             }
 
-            File source = new File(System.getProperty("user.dir"), args[0]);
-            File des = new File(System.getProperty("user.dir"), args[1]);
+            File source = new File(CurrentDirectory, args[0]);
+            File des = new File(CurrentDirectory, args[1]);
 
             if (source.isDirectory() || des.isDirectory()) {
                 System.out.println("Error: arguments must be files.");
@@ -217,14 +219,11 @@ public class Terminal {
             } else if (source.exists()) {
                 try {
                     Files.copy(source.toPath(), des.toPath(), REPLACE_EXISTING);
-                    System.out.println("File copied successfully to " + des.getPath());
                 } catch (IOException e) {
                     System.out.println("Error: " + e.getMessage());
-                    return;
                 }
             } else {
                 System.out.println("Error: source file does not exist!");
-                return;
             }
         }
     }
@@ -237,21 +236,19 @@ public class Terminal {
             return;
         }
 
-        File source = new File(System.getProperty("user.dir"), args[1]);
-        File des = new File(System.getProperty("user.dir"), args[2]);
+        File source = new File(CurrentDirectory, args[1]);
+        File des = new File(CurrentDirectory, args[2]);
 
         if (!source.isDirectory() || !des.isDirectory()) {
             System.out.println("Error: arguments must be directories.");
         } else if (source.exists()) {
             try {
-                cp_directory(source, des);
-                System.out.println("Directory copied successfully to " + des.getPath());
+                cp_directory(source, new File(des, source.getName()));
             } catch (IOException e) {
                 System.out.println("Error: " + e.getMessage());
             }
         } else {
-            System.out.println("Error: source directoriy does not exist!");
-            return;
+            System.out.println("Error: source directory does not exist!");
         }
     }
 
@@ -280,6 +277,146 @@ public class Terminal {
 
     // ------------------------------------------
 
+    public void cat(String[] args) {
+        if (args.length != 1 && args.length != 2) {
+            System.out.println("Error: command takes 1 or 2 arguments");
+            return;
+        }
+        if (args.length == 1) {
+            File file = new File(CurrentDirectory, args[0]);
+
+            if (!file.exists()) {
+                System.out.println("Error: file not found!");
+                return;
+            }
+
+            if (file.isDirectory()) {
+                System.out.println("Error: " + args[0] + " is a directory, not a file!");
+                return;
+            }
+
+            try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+                String line;
+                while ((line = br.readLine()) != null) {
+                    System.out.println(line);
+                }
+            } catch (IOException e) {
+                System.out.println("Error reading file: " + e.getMessage());
+            }
+
+        } else {
+            File file1 = new File(CurrentDirectory, args[0]);
+            File file2 = new File(CurrentDirectory, args[1]);
+
+            if (!file1.exists() || !file2.exists()) {
+                System.out.println("Error: one or both files not found!");
+                return;
+            }
+
+            if (file1.isDirectory() || file2.isDirectory()) {
+                System.out.println("Error: one or both arguments are directories, not files!");
+                return;
+            }
+
+            try (
+                    BufferedReader br1 = new BufferedReader(new FileReader(file1));
+                    BufferedReader br2 = new BufferedReader(new FileReader(file2))) {
+                String line;
+                while ((line = br1.readLine()) != null) {
+                    System.out.println(line);
+                }
+                while ((line = br2.readLine()) != null) {
+                    System.out.println(line);
+                }
+            } catch (IOException e) {
+                System.out.println("Error reading files: " + e.getMessage());
+            }
+        }
+    }
+
+    // ------------------------------------------
+
+    public void cd(String[] args) {
+        if (args.length != 0 && args.length != 1) {
+            System.out.println("Error: command takes 1 argument or not take anything");
+        } else if (args.length == 0) {
+            CurrentDirectory = HOME_DIRECTORY;
+        } else if (args.length == 1 && args[0].equals("..")) {
+            int lastslsh = CurrentDirectory.lastIndexOf("\\");
+            if (lastslsh == -1 || CurrentDirectory.equals("C:")) {
+                System.out.println("Already at the root directory");
+            } else {
+                String parent = CurrentDirectory.substring(0, lastslsh);
+                CurrentDirectory = parent;
+            }
+        } else {
+            if (args[0].contains("\\")) {
+                File f = new File(args[0]);
+                if (f.exists() && f.isDirectory()) {
+                    CurrentDirectory = args[0];
+                } else {
+                    System.out.println("Error: directory not found.");
+                }
+            } else {
+                if (args[0].contains("\\")) {
+                    // Absolute path
+                    File f = new File(args[0]);
+                    if (f.exists() && f.isDirectory()) {
+                        CurrentDirectory = args[0];
+                    } else {
+                        System.out.println("Error: directory not found.");
+                    }
+                } else {
+                    // short
+                    String newPath = CurrentDirectory + "\\" + args[0];
+                    File f = new File(newPath);
+                    if (f.exists() && f.isDirectory()) {
+                        CurrentDirectory = newPath;
+                    } else {
+                        System.out.println("Error: directory not found.");
+                    }
+                }
+            }
+        }
+    }
+
+    // ------------------------------------------
+
+    public void wc(String[] args) {
+        if (args.length != 1) {
+            System.out.println("Error: command takes exactly one argument (filename).");
+            return;
+        }
+
+        File file = new File(CurrentDirectory, args[0]);
+        if (!file.exists() || file.isDirectory()) {
+            System.out.println("Error: file not found or is a directory!");
+            return;
+        }
+
+        int lines = 0;
+        int words = 0;
+        long characters = file.length();
+
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                lines++;
+                String[] wordArray = line.trim().split("\\s+");
+                if (!line.trim().isEmpty()) {
+                    words += wordArray.length;
+                }
+            }
+
+            System.out.printf("%d %d %d %s\n", lines, words, characters, file.getName());
+
+        } catch (IOException e) {
+            System.out.println("Error reading file: " + e.getMessage());
+        }
+    }
+
+    // ------------------------------------------
+
     // This method will choose the suitable command method to be called
     public void chooseCommandAction() {
         switch (parser.commandName) {
@@ -301,6 +438,15 @@ public class Terminal {
             case "cp":
                 cp(parser.args);
                 break;
+            case "cat":
+                cat(parser.args);
+                break;
+            case "cd":
+                cd(parser.args);
+                break;
+            case "wc":
+                wc(parser.args);
+                break;
             default:
                 System.out.println("Error: Command not found!");
         }
@@ -314,7 +460,7 @@ public class Terminal {
         String input;
 
         while (true) {
-            System.out.printf("%s $ ", System.getProperty("user.dir"));
+            System.out.printf("%s $ ", CurrentDirectory);
             input = in.nextLine();
 
             if ("exit".equalsIgnoreCase(input.trim())) {
