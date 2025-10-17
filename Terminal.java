@@ -1,3 +1,6 @@
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
@@ -9,6 +12,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.io.FileReader;
 import java.io.BufferedReader;
+import java.util.zip.ZipOutputStream;
+
 import static java.nio.file.StandardCopyOption.*;
 // ==============================================
 
@@ -417,6 +422,133 @@ public class Terminal {
 
     // ------------------------------------------
 
+
+    public void touch (String[] args){
+        String filePath = args[0];
+        File file = new File(filePath);
+        try {
+            if (file.exists()) {
+                boolean success = file.setLastModified(System.currentTimeMillis());
+                if (success) {
+                    System.out.println("Timestamp updated successfully for: " + filePath);
+                } else {
+                    System.out.println("Error: Could not update Timestamp for: " + filePath);
+                }
+            } else {
+                if (file.createNewFile()) {
+                    System.out.println("File created successfully!: " + filePath );
+                } else {
+                    System.out.println("Error: File could not be created: " + filePath);
+                }
+            }
+        } catch (IOException e) {
+            System.out.println("I/O Error: Could not create or update the file: " + filePath);
+        }
+    }
+
+    public void mkdir (String[] args){
+        for (String dirName : args){
+            dirName = dirName.trim();
+            Path currentDir = Path.of(System.getProperty("user.dir"));
+            Path newDir = currentDir.resolve(dirName);
+
+            try {
+                if (Files.exists(newDir)){
+                    System.out.println("The directory \"" + dirName + "\" already exists.");
+                } else{
+                    Files.createDirectories(newDir);
+                    System.out.println("Directory created Successfully: " + dirName);
+                }
+            } catch (IOException e){
+                System.out.println("Error: Could not create directory: " + dirName + ". " + e.getMessage());
+            }
+        }
+    }
+
+    // ------------------------------------------
+
+    public void zip(String[] args) {
+        if (args.length < 2) {
+            System.out.println("Please enter the command in one of the following formats");
+            System.out.println("  zip <output.zip> <file1> <file2> ... to compress  files");
+            System.out.println("  zip -r <output.zip> <folder>         to compress folder recursively");
+            return;
+        }
+
+        boolean recursive = false;
+        int startIndex = 0;
+
+        if (args[0].equals("-r")) {
+            recursive = true;
+            startIndex = 1;
+            if (args.length < 3) {
+                System.out.println("Please enter: zip -r <output.zip> <folder>");
+                return;
+            }
+        }
+
+        Path outputFile = Paths.get(args[startIndex]);
+
+
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(outputFile))) {
+            if (!recursive) {
+                for (int i = startIndex + 1; i < args.length; i++) {
+                    Path file = Paths.get(args[i]);
+                    if (!Files.exists(file)) {
+                        System.out.println("Couldn't find the file: " + file);
+                        continue;
+                    }
+                    if (Files.isDirectory(file)) {
+                        System.out.println("Skipp folder : " + file);
+                        continue;
+                    }
+
+                    ZipEntry zipEntry = new ZipEntry(file.getFileName().toString());
+                    zipOutputStream.putNextEntry(zipEntry);
+                    Files.copy(file, zipOutputStream);
+                    zipOutputStream.closeEntry();
+                }
+            }
+            else {
+                Path folder = Paths.get(args[startIndex + 1]);
+                if (!Files.exists(folder)) {
+                    System.out.println("Couldn't find the folder: " + folder);
+                    return;
+                }
+                addFileToZip(zipOutputStream, folder, folder.getParent());
+            }
+
+            System.out.println("Files compressed successfully into: " + outputFile.toAbsolutePath());
+
+        } catch (IOException e) {
+            System.out.println("I/O Error: Could not compress files. " + e.getMessage());
+        }
+    }
+
+    // ------------------------------------------
+
+    private void addFileToZip(ZipOutputStream zipOut, Path file, Path basePath) throws IOException {
+        if (basePath == null) {
+            basePath = file.getParent();
+        }
+
+        if (Files.isDirectory(file)) {
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(file)) {
+                for (Path child : stream) {
+                    addFileToZip(zipOut, child, basePath);
+                }
+            }
+        }
+        else {
+            String zipEntryName = basePath.relativize(file).toString();
+            zipOut.putNextEntry(new ZipEntry(zipEntryName));
+            Files.copy(file, zipOut);
+            zipOut.closeEntry();
+        }
+    }
+
+    // ------------------------------------------
+
     // This method will choose the suitable command method to be called
     public void chooseCommandAction() {
         switch (parser.commandName) {
@@ -446,6 +578,15 @@ public class Terminal {
                 break;
             case "wc":
                 wc(parser.args);
+                break;
+            case "touch":
+                touch(parser.args);
+                break;
+            case "mkdir":
+                mkdir(parser.args);
+                break;
+            case "zip":
+                zip(parser.args);
                 break;
             default:
                 System.out.println("Error: Command not found!");
