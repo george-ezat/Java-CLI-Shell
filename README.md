@@ -12,7 +12,7 @@ The team members and their specific contributions to the project are listed belo
 
 | Name                     | Faculty ID | Tasks Completed                                      |
 | ------------------------ | ---------- | ---------------------------------------------------- |
-| **Doha Fathy Refaey**    | _20230107_ | Implemented `touch`, `mkdir`, and `zip`.             |
+| **Doha Fathy Refaey**    | _20230197_ | Implemented `touch`, `mkdir`, and `zip`.             |
 | **Marym Ali Abdelkarym** | _20230396_ | Implemented `wc`, `cat`, and `cd`.                   |
 | **Nagham Sabry Ahmed**   | _20230443_ | Implemented `>`, and `>>`.                           |
 | **George Ezzat Hosni**   | _20231041_ | Implemented `pwd`, `ls`, `rm`, `rmdir`, and `unzip`. |
