@@ -10,13 +10,13 @@ This project was developed as a group assignment at **Cairo University, Faculty 
 
 The team members and their specific contributions to the project are listed below.
 
-| Name                     | Faculty ID | Tasks Completed                                      |
-| ------------------------ | ---------- | ---------------------------------------------------- |
-| **Doha Fathy Refaey**    | _20230197_ | Implemented `touch`, `mkdir`, and `zip`.             |
-| **Marym Ali Abdelkarym** | _20230396_ | Implemented `wc`, `cat`, and `cd`.                   |
-| **Nagham Sabry Ahmed**   | _20230443_ | Implemented `>`, and `>>`.                           |
-| **George Ezzat Hosni**   | _20231041_ | Implemented `pwd`, `ls`, `rm`, `rmdir`, and `unzip`. |
-| **Kerolus Akram Madi**   | _20231126_ | Implemented `cp`, and `cp -r`.                       |
+| Name                     | Faculty ID | Tasks Completed                                            |
+| ------------------------ | ---------- | ---------------------------------------------------------- |
+| **Doha Fathy Refaey**    | _20230197_ | Implemented `touch`, `mkdir`, and `zip`.                   |
+| **Marym Ali Abdelkarym** | _20230396_ | Implemented `wc`, and `cat`                                |
+| **Nagham Sabry Ahmed**   | _20230443_ | Implemented `>`, and `>>`.                                 |
+| **George Ezzat Hosni**   | _20231041_ | Implemented `pwd`, `ls`, `rm`, `cd`, `rmdir`, and `unzip`. |
+| **Kerolus Akram Madi**   | _20231126_ | Implemented `cp`, and `cp -r`.                             |
 
 ---
 
