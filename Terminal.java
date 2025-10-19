@@ -11,10 +11,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.BufferedReader;
 import java.util.zip.ZipOutputStream;
-
 import static java.nio.file.StandardCopyOption.*;
+
 // ==============================================
 
 class Parser {
@@ -27,30 +28,28 @@ class Parser {
 
     // This method will divide the input into commandName and args
     public boolean parse(String input) {
-
         input = input.trim();
         if (input.contains(">>")) {
             String[] parts = input.split(">>", 2);
             input = parts[0].trim();
             outputFile = parts[1].trim();
             append = true;
-        }
-        else if (input.contains(">")) {
-            String[] parts = input.split(">",2);
+        } else if (input.contains(">")) {
+            String[] parts = input.split(">", 2);
             input = parts[0].trim();
             outputFile = parts[1].trim();
         }
 
         String[] input_parts = input.split("\\s+");
 
-        if (input_parts.length > 0) {
-            commandName = input_parts[0];
-            args = new String[input_parts.length - 1];
-            System.arraycopy(input_parts, 1, args, 0, input_parts.length - 1);
-            return true;
+        if (input_parts.length == 0 || input_parts[0].isEmpty()) {
+            return false;
         }
 
-        return false;
+        commandName = input_parts[0];
+        args = new String[input_parts.length - 1];
+        System.arraycopy(input_parts, 1, args, 0, input_parts.length - 1);
+        return true;
     }
 
     // ------------------------------------------
@@ -89,8 +88,8 @@ public class Terminal {
             return "Error: command takes no argument";
         }
 
-        File current_directory = new File(CurrentDirectory);
-        File[] filesAndDirectories = current_directory.listFiles();
+        File currentDir = new File(CurrentDirectory);
+        File[] filesAndDirectories = currentDir.listFiles();
         String[] names = new String[filesAndDirectories.length];
 
         for (short i = 0; i < filesAndDirectories.length; i++) {
@@ -98,37 +97,36 @@ public class Terminal {
         }
 
         Arrays.sort(names);
-        return (String.join("\t", names));
+        return String.join("\t", names);
     }
 
     // ------------------------------------------
 
-    public void rm(String[] args) {
+    public String rm(String[] args) {
         if (args.length != 1) {
-            System.out.println("Error: command requires exactly one argument (file name or path).");
-            return;
+            return "Error: command requires exactly one argument (file name or path).";
         }
 
         File fileToRemove = new File(CurrentDirectory, args[0]);
         if (fileToRemove.isDirectory()) {
-            System.out.println("Error: It is a directory not a file!");
+            return "Error: It is a directory not a file!";
         } else if (fileToRemove.exists()) {
             fileToRemove.delete();
+            return "";
         } else {
-            System.out.println("Error: This file does not exist!");
+            return "Error: This file does not exist!";
         }
     }
 
     // ------------------------------------------
 
-    public void rmdir(String[] args) {
+    public String rmdir(String[] args) {
         if (args.length != 1) {
-            System.out.println("Error: command requires exactly one argument (directory name).");
-            return;
+            return "Error: command requires exactly one argument (directory name).";
         }
 
-        File current_directory = new File(CurrentDirectory);
-        File[] filesAndDirectories = current_directory.listFiles();
+        File currentDir = new File(CurrentDirectory);
+        File[] filesAndDirectories = currentDir.listFiles();
 
         if ("*".equals(args[0])) {
             for (File item : filesAndDirectories) {
@@ -136,50 +134,47 @@ public class Terminal {
                     item.delete();
                 }
             }
+            return "";
         } else {
             File directory = new File(CurrentDirectory, args[0]);
             if (directory.exists()) {
                 if (directory.isDirectory()) {
                     if (directory.listFiles().length == 0) {
                         directory.delete();
+                        return "";
                     } else {
-                        System.out.println("Error: Directory is not empty!");
+                        return "Error: Directory is not empty!";
                     }
                 } else {
-                    System.out.println("Error: '" + args[0] + "' is a file, not a directory!");
+                    return "Error: '" + args[0] + "' is a file, not a directory!";
                 }
             } else
-                System.out.println("Error: Directory does not exist!");
+                return "Error: Directory does not exist!";
         }
     }
 
     // ------------------------------------------
 
-    public void unzip(String[] args) {
+    public String unzip(String[] args) {
         if (args.length != 1 && args.length != 3) {
-            System.out.println("Error: Invalid arguments!");
-            System.out.println("Usage: unzip <file.zip> [-d <destination_directory>]");
-            return;
+            return "Error: Invalid arguments!\nUsage: unzip <file.zip> [-d <destination_directory>]";
         }
 
         File zipFile = new File(CurrentDirectory, args[0]);
         File destDir;
 
         if (!zipFile.getName().endsWith(".zip")) {
-            System.out.println("Error: It is not a zip file!");
-            return;
+            return "Error: It is not a zip file!";
         }
 
         if (!zipFile.exists()) {
-            System.out.println("Error: Zip file does not exist!");
-            return;
+            return "Error: Zip file does not exist!";
         }
 
         // Determine the destination directory
         if (args.length == 3) {
             if (!args[1].equals("-d")) {
-                System.out.println("Error: Invalid flag. Use '-d' for destination.");
-                return;
+                return "Error: Invalid flag. Use '-d' for destination.";
             }
             destDir = new File(CurrentDirectory, args[2]);
         } else {
@@ -212,61 +207,61 @@ public class Terminal {
                 zis.closeEntry();
                 zipEntry = zis.getNextEntry();
             }
+            return "";
         } catch (Exception e) {
-            System.out.println("Error: " + e.getMessage());
+            return "Error: " + e.getMessage();
         }
     }
 
     // ------------------------------------------
 
-    public void cp(String[] args) {
+    public String cp(String[] args) {
         if (args.length > 0 && args[0].equals("-r")) {
-            cpr(args);
+            return cpr(args);
         } else {
             if (args.length != 2) {
-                System.out.println("Error: command requires exactly two arguments.");
-                return;
+                return "Error: command requires exactly two arguments.";
             }
 
             File source = new File(CurrentDirectory, args[0]);
             File des = new File(CurrentDirectory, args[1]);
 
             if (source.isDirectory() || des.isDirectory()) {
-                System.out.println("Error: arguments must be files.");
-                return;
+                return "Error: arguments must be files.";
             } else if (source.exists()) {
                 try {
                     Files.copy(source.toPath(), des.toPath(), REPLACE_EXISTING);
                 } catch (IOException e) {
-                    System.out.println("Error: " + e.getMessage());
+                    return "Error: " + e.getMessage();
                 }
+                return "";
             } else {
-                System.out.println("Error: source file does not exist!");
+                return "Error: source file does not exist!";
             }
         }
     }
 
     // ------------------------------------------
 
-    public void cpr(String[] args) {
+    public String cpr(String[] args) {
         if (args.length != 3) {
-            System.out.println("Error: command requires exactly two arguments.");
-            return;
+            return "Error: command requires exactly two arguments.";
         }
 
         File source = new File(CurrentDirectory, args[1]);
         File des = new File(CurrentDirectory, args[2]);
 
         if (!source.isDirectory() || !des.isDirectory()) {
-            System.out.println("Error: arguments must be directories.");
+            return "Error: arguments must be directories.";
         } else if (source.exists()) {
             try {
                 cp_directory(source, new File(des, source.getName()));
             } catch (IOException e) {
-                System.out.println("Error: " + e.getMessage());
+                return "Error: " + e.getMessage();
             }
+            return "";
         } else {
-            System.out.println("Error: source directory does not exist!");
+            return "Error: source directory does not exist!";
         }
     }
 
@@ -300,7 +295,7 @@ public class Terminal {
             return "Error: command takes from 1 to 3 arguments";
         }
 
-        StringBuilder output = new StringBuilder();
+        String output = "";
 
         try {
             if (args.length == 1) {
@@ -317,7 +312,7 @@ public class Terminal {
                 try (BufferedReader br = new BufferedReader(new FileReader(file))) {
                     String line;
                     while ((line = br.readLine()) != null) {
-                        output.append(line).append("\n");
+                        output += line + "\n";
                     }
                 }
 
@@ -335,14 +330,13 @@ public class Terminal {
 
                 try (
                         BufferedReader br1 = new BufferedReader(new FileReader(file1));
-                        BufferedReader br2 = new BufferedReader(new FileReader(file2))
-                ) {
+                        BufferedReader br2 = new BufferedReader(new FileReader(file2))) {
                     String line;
                     while ((line = br1.readLine()) != null) {
-                        output.append(line).append("\n");
+                        output += line + "\n";
                     }
                     while ((line = br2.readLine()) != null) {
-                        output.append(line).append("\n");
+                        output += line + "\n";
                     }
                 }
             }
@@ -351,53 +345,42 @@ public class Terminal {
             return "Error reading file: " + e.getMessage();
         }
 
-        return output.toString();
+        return output;
     }
-
 
     // ------------------------------------------
 
-    public void cd(String[] args) {
-        if (args.length != 0 && args.length != 1) {
-            System.out.println("Error: command takes 1 argument or not take anything");
-        } else if (args.length == 0) {
-            CurrentDirectory = HOME_DIRECTORY;
-        } else if (args.length == 1 && args[0].equals("..")) {
-            int lastslsh = CurrentDirectory.lastIndexOf("\\");
-            if (lastslsh == -1 || CurrentDirectory.equals("C:")) {
-                System.out.println("Already at the root directory");
-            } else {
-                String parent = CurrentDirectory.substring(0, lastslsh);
-                CurrentDirectory = parent;
-            }
+    public String cd(String[] args) {
+        if (args.length > 1) {
+            return "Error: command takes at most one argument.";
+        }
+
+        String targetPath;
+        if (args.length == 0) {
+            targetPath = HOME_DIRECTORY;
         } else {
-            if (args[0].contains("\\")) {
-                File f = new File(args[0]);
-                if (f.exists() && f.isDirectory()) {
-                    CurrentDirectory = args[0];
-                } else {
-                    System.out.println("Error: directory not found.");
-                }
-            } else {
-                if (args[0].contains("\\")) {
-                    // Absolute path
-                    File f = new File(args[0]);
-                    if (f.exists() && f.isDirectory()) {
-                        CurrentDirectory = args[0];
-                    } else {
-                        System.out.println("Error: directory not found.");
-                    }
-                } else {
-                    // short
-                    String newPath = CurrentDirectory + "\\" + args[0];
-                    File f = new File(newPath);
-                    if (f.exists() && f.isDirectory()) {
-                        CurrentDirectory = newPath;
-                    } else {
-                        System.out.println("Error: directory not found.");
-                    }
-                }
+            targetPath = args[0];
+        }
+
+        File newDir;
+        File targetFile = new File(targetPath);
+
+        if (targetFile.isAbsolute()) {
+            newDir = targetFile;
+        } else {
+            newDir = new File(CurrentDirectory, targetPath);
+        }
+
+        // Check if the path exists and is a directory
+        if (newDir.exists() && newDir.isDirectory()) {
+            try {
+                CurrentDirectory = newDir.getCanonicalPath();
+            } catch (IOException e) {
+                System.out.println("Error resolving path: " + e.getMessage());
             }
+            return "";
+        } else {
+            return "Error: directory not found.";
         }
     }
 
@@ -427,63 +410,65 @@ public class Terminal {
                 }
             }
 
+            lines = lines == 0 ? lines : lines - 1;
+
             return String.format("%d %d %d %s\n", lines, words, characters, file.getName());
 
         } catch (IOException e) {
-            return("Error reading file: " + e.getMessage());
+            return "Error reading file: " + e.getMessage();
         }
     }
 
     // ------------------------------------------
+
     public String echo(String[] args) {
         return String.join(" ", args);
     }
 
     // ------------------------------------------
 
-
-    public void touch(String[] args) {
+    public String touch(String[] args) {
         String filePath = args[0];
-        File file = new File(filePath);
+        File file = new File(CurrentDirectory, filePath);
         try {
             if (file.exists()) {
-                boolean success = file.setLastModified(System.currentTimeMillis());
-                if (success) {
-                    System.out.println("Timestamp updated successfully for: " + filePath);
+                if (file.setLastModified(System.currentTimeMillis())) {
+                    return "";
                 } else {
-                    System.out.println("Error: Could not update Timestamp for: " + filePath);
+                    return "Error: Could not update Timestamp for: " + filePath;
                 }
             } else {
                 if (file.createNewFile()) {
-                    System.out.println("File created successfully!: " + filePath);
+                    return "";
                 } else {
-                    System.out.println("Error: File could not be created: " + filePath);
+                    return "Error: File could not be created: " + filePath;
                 }
             }
         } catch (IOException e) {
-            System.out.println("I/O Error: Could not create or update the file: " + filePath);
+            return "I/O Error: Could not create or update the file: " + filePath;
         }
     }
 
     // ------------------------------------------
 
-    public void mkdir(String[] args) {
+    public String mkdir(String[] args) {
         for (String dirName : args) {
             dirName = dirName.trim();
-            Path currentDir = Path.of(System.getProperty("user.dir"));
-            Path newDir = currentDir.resolve(dirName);
+            File newDir = new File(dirName).isAbsolute() ? new File(dirName) : new File(CurrentDirectory, dirName);
 
             try {
-                if (Files.exists(newDir)) {
-                    System.out.println("The directory \"" + dirName + "\" already exists.");
+                if (newDir.exists()) {
+                    return "The directory '" + dirName + "' already exists.";
                 } else {
-                    Files.createDirectories(newDir);
-                    System.out.println("Directory created Successfully: " + dirName);
+                    if (!newDir.mkdir()) {
+                        return "Error: The parent directory doesn't exist";
+                    }
                 }
-            } catch (IOException e) {
-                System.out.println("Error: Could not create directory: " + dirName + ". " + e.getMessage());
+            } catch (Exception e) {
+                return "Error: Could not create directory: " + dirName + ". " + e.getMessage();
             }
         }
+        return "";
     }
 
     // ------------------------------------------
@@ -505,18 +490,17 @@ public class Terminal {
         } catch (IOException e) {
             System.out.println("Error writing to file: " + e.getMessage());
         }
-
-
     }
 
     // ------------------------------------------
 
-    public void zip(String[] args) {
+    public String zip(String[] args) {
+        String output = "";
         if (args.length < 2) {
-            System.out.println("Please enter the command in one of the following formats");
-            System.out.println("  zip <output.zip> <file1> <file2> ... to compress  files");
-            System.out.println("  zip -r <output.zip> <folder>         to compress folder recursively");
-            return;
+            output += "Please enter the command in one of the following formats";
+            output += "  zip <output.zip> <file1> <file2> ... to compress  files";
+            output += "  zip -r <output.zip> <folder>         to compress folder recursively";
+            return output;
         }
 
         boolean recursive = false;
@@ -526,24 +510,22 @@ public class Terminal {
             recursive = true;
             startIndex = 1;
             if (args.length < 3) {
-                System.out.println("Please enter: zip -r <output.zip> <folder>");
-                return;
+                return "Please enter: zip -r <output.zip> <folder>";
             }
         }
 
-        Path outputFile = Paths.get(args[startIndex]);
-
+        Path outputFile = Paths.get(CurrentDirectory, args[startIndex]);
 
         try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(outputFile))) {
             if (!recursive) {
                 for (int i = startIndex + 1; i < args.length; i++) {
-                    Path file = Paths.get(args[i]);
+                    Path file = Paths.get(CurrentDirectory, args[i]);
                     if (!Files.exists(file)) {
-                        System.out.println("Couldn't find the file: " + file);
+                        output += "Couldn't find the file: " + file;
                         continue;
                     }
                     if (Files.isDirectory(file)) {
-                        System.out.println("Skipp folder : " + file);
+                        output += "Skip folder : " + file;
                         continue;
                     }
 
@@ -552,19 +534,17 @@ public class Terminal {
                     Files.copy(file, zipOutputStream);
                     zipOutputStream.closeEntry();
                 }
+                return output;
             } else {
-                Path folder = Paths.get(args[startIndex + 1]);
+                Path folder = Paths.get(CurrentDirectory, args[startIndex + 1]);
                 if (!Files.exists(folder)) {
-                    System.out.println("Couldn't find the folder: " + folder);
-                    return;
+                    return "Couldn't find the folder: " + folder;
                 }
                 addFileToZip(zipOutputStream, folder, folder.getParent());
+                return output;
             }
-
-            System.out.println("Files compressed successfully into: " + outputFile.toAbsolutePath());
-
         } catch (IOException e) {
-            System.out.println("I/O Error: Could not compress files. " + e.getMessage());
+            return "I/O Error: Could not compress files. " + e.getMessage();
         }
     }
 
@@ -602,22 +582,23 @@ public class Terminal {
                 output = ls();
                 break;
             case "rm":
-                rm(parser.args);
+                output = rm(parser.args);
                 break;
             case "rmdir":
-                rmdir(parser.args);
+                output = rmdir(parser.args);
                 break;
             case "unzip":
-                unzip(parser.args);
+                output = unzip(parser.args);
                 break;
             case "cp":
-                cp(parser.args);
+                output = cp(parser.args);
                 break;
             case "cat":
                 output = cat(parser.args);
                 break;
             case "cd":
-                cd(parser.args);
+                output = cd(parser.args);
+                break;
             case "echo":
                 output = echo(parser.args);
                 break;
@@ -625,29 +606,27 @@ public class Terminal {
                 output = wc(parser.args);
                 break;
             case "touch":
-                touch(parser.args);
+                output = touch(parser.args);
                 break;
             case "mkdir":
-                mkdir(parser.args);
+                output = mkdir(parser.args);
                 break;
             case "zip":
-                zip(parser.args);
+                output = zip(parser.args);
                 break;
             default:
-                System.out.println("Error: Command not found!");
+                output = "Error: Command not found!";
         }
         if (parser.outputFile != null && !parser.outputFile.isEmpty()) {
             redirect(output, parser.outputFile, parser.append);
-        }
-        else {
+        } else if (output != null && !output.isEmpty()) {
             System.out.println(output);
         }
     }
-}
 
     // ------------------------------------------
 
-   public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws IOException {
         Terminal terminal = new Terminal();
         Scanner in = new Scanner(System.in);
         String input;
@@ -668,6 +647,5 @@ public class Terminal {
         in.close();
     }
 }
-
 
 // ==============================================
