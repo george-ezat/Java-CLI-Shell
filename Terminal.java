@@ -291,8 +291,8 @@ public class Terminal {
     // ------------------------------------------
 
     public String cat(String[] args) {
-        if (args.length != 1 && args.length != 2 && args.length != 3) {
-            return "Error: command takes from 1 to 3 arguments";
+        if (args.length < 1 || args.length > 2) {
+            return "Error: command takes 1 or 2 arguments";
         }
 
         String output = "";
@@ -410,9 +410,7 @@ public class Terminal {
                 }
             }
 
-            lines = lines == 0 ? lines : lines - 1;
-
-            return String.format("%d %d %d %s\n", lines, words, characters, file.getName());
+            return String.format("%d %d %d %s", lines, words, characters, file.getName());
 
         } catch (IOException e) {
             return "Error reading file: " + e.getMessage();
@@ -428,8 +426,12 @@ public class Terminal {
     // ------------------------------------------
 
     public String touch(String[] args) {
+        if (args.length != 1) {
+            return "Error: command requires exactly one argument.";
+        }
+
         String filePath = args[0];
-        File file = new File(CurrentDirectory, filePath);
+        File file = new File(filePath).isAbsolute() ? new File(filePath) : new File(CurrentDirectory, filePath);
         try {
             if (file.exists()) {
                 if (file.setLastModified(System.currentTimeMillis())) {
