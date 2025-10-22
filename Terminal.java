@@ -1,6 +1,5 @@
 import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
@@ -74,6 +73,12 @@ public class Terminal {
 
     // ------------------------------------------
 
+    public File resolveFile(String path){
+        return new File(path).isAbsolute() ? new File(path) : new File(CurrentDirectory, path);
+    }
+
+    // ------------------------------------------
+
     public String pwd() {
         if (parser.args.length != 0) {
             return "Error: command takes no argument.";
@@ -107,7 +112,7 @@ public class Terminal {
             return "Error: command requires exactly one argument (file name or path).";
         }
 
-        File fileToRemove = new File(CurrentDirectory, args[0]);
+        File fileToRemove = resolveFile(args[0]);
         if (fileToRemove.isDirectory()) {
             return "Error: It is a directory not a file!";
         } else if (fileToRemove.exists()) {
@@ -126,17 +131,16 @@ public class Terminal {
         }
 
         File currentDir = new File(CurrentDirectory);
-        File[] filesAndDirectories = currentDir.listFiles();
 
         if ("*".equals(args[0])) {
-            for (File item : filesAndDirectories) {
+            for (File item : currentDir.listFiles()) {
                 if (item.isDirectory() && item.listFiles().length == 0) {
                     item.delete();
                 }
             }
             return "";
         } else {
-            File directory = new File(CurrentDirectory, args[0]);
+            File directory = resolveFile(args[0]);
             if (directory.exists()) {
                 if (directory.isDirectory()) {
                     if (directory.listFiles().length == 0) {
@@ -160,15 +164,15 @@ public class Terminal {
             return "Error: Invalid arguments!\nUsage: unzip <file.zip> [-d <destination_directory>]";
         }
 
-        File zipFile = new File(CurrentDirectory, args[0]);
+        File zipFile = resolveFile(args[0]);
         File destDir;
 
         if (!zipFile.getName().endsWith(".zip")) {
-            return "Error: It is not a zip file!";
+            return String.format("Error: '%s' It is not a zip file!", zipFile.getName());
         }
-
+        
         if (!zipFile.exists()) {
-            return "Error: Zip file does not exist!";
+            return String.format("Error: '%s' does not exist!", zipFile.getName());
         }
 
         // Determine the destination directory
@@ -176,7 +180,7 @@ public class Terminal {
             if (!args[1].equals("-d")) {
                 return "Error: Invalid flag. Use '-d' for destination.";
             }
-            destDir = new File(CurrentDirectory, args[2]);
+            destDir = resolveFile(args[2]);
         } else {
             destDir = new File(CurrentDirectory);
         }
@@ -223,8 +227,8 @@ public class Terminal {
                 return "Error: command requires exactly two arguments.";
             }
 
-            File source = new File(CurrentDirectory, args[0]);
-            File des = new File(CurrentDirectory, args[1]);
+            File source = resolveFile(args[0]);
+            File des = resolveFile(args[1]);
 
             if (source.isDirectory() || des.isDirectory()) {
                 return "Error: arguments must be files.";
@@ -248,8 +252,8 @@ public class Terminal {
             return "Error: command requires exactly two arguments.";
         }
 
-        File source = new File(CurrentDirectory, args[1]);
-        File des = new File(CurrentDirectory, args[2]);
+        File source = resolveFile(args[1]);
+        File des = resolveFile(args[2]);
 
         if (!source.isDirectory() || !des.isDirectory()) {
             return "Error: arguments must be directories.";
@@ -299,7 +303,7 @@ public class Terminal {
 
         try {
             if (args.length == 1) {
-                File file = new File(CurrentDirectory, args[0]);
+                File file = resolveFile(args[0]);
 
                 if (!file.exists()) {
                     return "Error: file not found!";
@@ -317,8 +321,8 @@ public class Terminal {
                 }
 
             } else if (args.length == 2) {
-                File file1 = new File(CurrentDirectory, args[0]);
-                File file2 = new File(CurrentDirectory, args[1]);
+                File file1 = resolveFile(args[0]);
+                File file2 = resolveFile(args[1]);
 
                 if (!file1.exists() || !file2.exists()) {
                     return "Error: one or both files not found!";
@@ -362,14 +366,7 @@ public class Terminal {
             targetPath = args[0];
         }
 
-        File newDir;
-        File targetFile = new File(targetPath);
-
-        if (targetFile.isAbsolute()) {
-            newDir = targetFile;
-        } else {
-            newDir = new File(CurrentDirectory, targetPath);
-        }
+        File newDir = resolveFile(targetPath);
 
         // Check if the path exists and is a directory
         if (newDir.exists() && newDir.isDirectory()) {
@@ -391,7 +388,7 @@ public class Terminal {
             return "Error: command takes exactly one argument (filename).";
         }
 
-        File file = new File(CurrentDirectory, args[0]);
+        File file = resolveFile(args[0]);
         if (!file.exists() || file.isDirectory()) {
             return "Error: file not found or is a directory!";
         }
@@ -431,7 +428,7 @@ public class Terminal {
         }
 
         String filePath = args[0];
-        File file = new File(filePath).isAbsolute() ? new File(filePath) : new File(CurrentDirectory, filePath);
+        File file = resolveFile(filePath);
         try {
             if (file.exists()) {
                 if (file.setLastModified(System.currentTimeMillis())) {
@@ -457,7 +454,7 @@ public class Terminal {
         String output = "";
         for (String dirName : args) {
             dirName = dirName.trim();
-            File newDir = new File(dirName).isAbsolute() ? new File(dirName) : new File(CurrentDirectory, dirName);
+            File newDir = resolveFile(dirName);
 
             try {
                 if (newDir.exists()) {
@@ -477,7 +474,7 @@ public class Terminal {
     // ------------------------------------------
 
     public void redirect(String input, String filename, boolean append) throws IOException {
-        File file = new File(CurrentDirectory, filename);
+        File file = resolveFile(filename);
         try {
             if (file.isDirectory()) {
                 System.out.println("Error: file is a directory");
@@ -507,42 +504,57 @@ public class Terminal {
         }
 
         boolean recursive = false;
-        int startIndex = 0;
+        String outputFilePath;
+        int filesStartIndex;
 
         if (args[0].equals("-r")) {
-            recursive = true;
-            startIndex = 1;
-            if (args.length < 3) {
+            if (args.length != 3) {
                 return "Please enter: zip -r <output.zip> <folder>";
             }
+            recursive = true;
+            outputFilePath = args[1];
+            filesStartIndex = 2;
+        } else {
+            outputFilePath = args[0];
+            filesStartIndex = 1;
         }
 
-        Path outputFile = Paths.get(CurrentDirectory, args[startIndex]);
+        File outputFile = resolveFile(outputFilePath);
 
-        try (ZipOutputStream zipOutputStream = new ZipOutputStream(Files.newOutputStream(outputFile))) {
+        try (ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(outputFile))) {
             if (!recursive) {
-                for (int i = startIndex + 1; i < args.length; i++) {
-                    Path file = Paths.get(CurrentDirectory, args[i]);
-                    if (!Files.exists(file)) {
-                        output += "Couldn't find the file: " + file;
+                for (int i = filesStartIndex; i < args.length; i++) {
+
+                    File fileToZip = resolveFile(args[i]);
+                    Path filePath = fileToZip.toPath();
+
+                    if (!Files.exists(filePath)) {
+                        output += "Couldn't find the file: " + filePath + "\n";
                         continue;
                     }
-                    if (Files.isDirectory(file)) {
-                        output += "Skip folder : " + file;
+                    if (Files.isDirectory(filePath)) {
+                        output += "Skip folder : " + filePath + "\n";
                         continue;
                     }
 
-                    ZipEntry zipEntry = new ZipEntry(file.getFileName().toString());
+                    ZipEntry zipEntry = new ZipEntry(filePath.getFileName().toString());
                     zipOutputStream.putNextEntry(zipEntry);
-                    Files.copy(file, zipOutputStream);
+                    Files.copy(filePath, zipOutputStream);
                     zipOutputStream.closeEntry();
                 }
-                return output;
+                return output.strip();
             } else {
-                Path folder = Paths.get(CurrentDirectory, args[startIndex + 1]);
+                String folderPathArg = args[filesStartIndex];
+                File folderToZip = resolveFile(folderPathArg);
+                Path folder = folderToZip.toPath();
+
                 if (!Files.exists(folder)) {
                     return "Couldn't find the folder: " + folder;
                 }
+                if (!Files.isDirectory(folder)){
+                    return "Error: " + folder + " is a file. The -r flag is for folders.";
+                }
+
                 addFileToZip(zipOutputStream, folder, folder.getParent());
                 return output;
             }
