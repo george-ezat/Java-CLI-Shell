@@ -454,23 +454,24 @@ public class Terminal {
     // ------------------------------------------
 
     public String mkdir(String[] args) {
+        String output = "";
         for (String dirName : args) {
             dirName = dirName.trim();
             File newDir = new File(dirName).isAbsolute() ? new File(dirName) : new File(CurrentDirectory, dirName);
 
             try {
                 if (newDir.exists()) {
-                    return "The directory '" + dirName + "' already exists.";
+                    output += "Error: The directory '" + dirName + "' already exists.\n";
                 } else {
                     if (!newDir.mkdir()) {
-                        return "Error: The parent directory doesn't exist";
+                        output += "Error: The parent directory doesn't exist.\n";
                     }
                 }
             } catch (Exception e) {
-                return "Error: Could not create directory: " + dirName + ". " + e.getMessage();
+                output += "Error: Could not create directory: " + dirName + ". " + e.getMessage() + "\n";
             }
         }
-        return "";
+        return output.strip();
     }
 
     // ------------------------------------------
