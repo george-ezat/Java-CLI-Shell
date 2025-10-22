@@ -409,7 +409,9 @@ public class Terminal {
     // ------------------------------------------
 
     public String echo(String[] args) {
-        return String.join(" ", args);
+        String text = String.join(" ", args);
+        text = text.replace("\"", "");
+        return text;
     }
 
     // ------------------------------------------
