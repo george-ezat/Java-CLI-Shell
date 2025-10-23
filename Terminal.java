@@ -1,4 +1,5 @@
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -93,13 +94,15 @@ public class Terminal {
 
         File currentDir = new File(CurrentDirectory);
         File[] filesAndDirectories = currentDir.listFiles();
-        String[] names = new String[filesAndDirectories.length];
+        List <String> names = new ArrayList<>();
 
         for (short i = 0; i < filesAndDirectories.length; i++) {
-            names[i] = filesAndDirectories[i].getName();
+            if (!filesAndDirectories[i].getName().startsWith(".")) {
+                names.add(filesAndDirectories[i].getName());
+            }
         }
 
-        Arrays.sort(names);
+        names.sort(null);
         return String.join("\t", names);
     }
 
@@ -445,6 +448,10 @@ public class Terminal {
     // ------------------------------------------
 
     public String mkdir(String[] args) {
+        if (args.length < 1) {
+            return "Error: command requires at least one argument.";
+        }
+
         String output = "";
         for (String dirName : args) {
             dirName = dirName.trim();
