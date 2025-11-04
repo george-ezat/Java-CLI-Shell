@@ -8,13 +8,13 @@ This project is a simple Command Line Interpreter (CLI) built in Java for the **
 
 The team members and their specific contributions to the project are listed below.
 
-| Name                     | Faculty ID | Tasks Completed                          |
-| ------------------------ | ---------- | ---------------------------------------- |
-| **Doha Fathy Refaey**    | *20230197* | Implemented `touch`, `mkdir`, and `zip`. |
-| **Marym Ali Abdelkarym** | *20230396* | Implemented `wc`, and `cat`              |
-| **Nagham Sabry Ahmed**   | *20230443* | Implemented `>`, `>>`, and `echo`.       |
-| **George Ezzat Hosni**   | *20231041* | Implemented `pwd`, `ls`, `rm`, `cd`, `rmdir`, and `unzip`.<br>**Led all code refactoring, unified path resolution, and standardized I/O & error handling.** |
-| **Kerolus Akram Madi**   | *20231126* | Implemented `cp`, and `cp -r`.           |
+| Name                     | Tasks Completed                          |
+| ------------------------ | ---------------------------------------- |
+| **Doha Fathy Refaey**    | Implemented `touch`, `mkdir`, and `zip`. |
+| **Marym Ali Abdelkarym** | Implemented `wc`, and `cat`              |
+| **Nagham Sabry Ahmed**   | Implemented `>`, `>>`, and `echo`.       |
+| **George Ezzat Hosni**   | Implemented `pwd`, `ls`, `rm`, `cd`, `rmdir`, and `unzip`.<br>**Led all code refactoring, unified path resolution, and standardized I/O & error handling.** |
+| **Kerolus Akram Madi**   | Implemented `cp`, and `cp -r`.           |
 
 ---
 
